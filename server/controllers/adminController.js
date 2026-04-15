@@ -56,7 +56,8 @@ exports.getDashboard = async (req, res) => {
       salesData,
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -80,7 +81,8 @@ exports.getAllOrders = async (req, res) => {
       .limit(Number(limit));
     res.json({ success: true, orders, total });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -94,7 +96,8 @@ exports.getAllUsers = async (req, res) => {
     const users = await User.find(query).sort('-createdAt').skip(skip).limit(Number(limit)).select('-password');
     res.json({ success: true, users, total });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -106,7 +109,8 @@ exports.updateUserRole = async (req, res) => {
     const user = await User.findByIdAndUpdate(req.params.id, { role }, { new: true }).select('-password');
     res.json({ success: true, user });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -120,6 +124,7 @@ exports.updateInventory = async (req, res) => {
     );
     res.json({ success: true, product });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };

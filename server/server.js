@@ -52,9 +52,10 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Dat
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(err.status || 500).json({
+  const status = err.status || 500;
+  res.status(status).json({
     success: false,
-    message: err.message || 'Internal Server Error',
+    message: status < 500 ? err.message : 'Something went wrong. Please try again.',
   });
 });
 

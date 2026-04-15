@@ -10,7 +10,8 @@ exports.addToGarage = async (req, res) => {
     await user.save();
     res.json({ success: true, garage: user.garage });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -24,7 +25,8 @@ exports.removeFromGarage = async (req, res) => {
     await user.save();
     res.json({ success: true, garage: user.garage });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -35,7 +37,8 @@ exports.setPrimaryVehicle = async (req, res) => {
     await user.save();
     res.json({ success: true, garage: user.garage });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -47,7 +50,8 @@ exports.addAddress = async (req, res) => {
     await user.save();
     res.json({ success: true, addresses: user.addresses });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -58,6 +62,7 @@ exports.removeAddress = async (req, res) => {
     await user.save();
     res.json({ success: true, addresses: user.addresses });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };

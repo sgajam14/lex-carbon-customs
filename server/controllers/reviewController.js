@@ -16,7 +16,8 @@ exports.getReviews = async (req, res) => {
       .limit(Number(limit));
     res.json({ success: true, reviews, total });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -50,8 +51,9 @@ exports.createReview = async (req, res) => {
 
     res.status(201).json({ success: true, review });
   } catch (err) {
+    console.error(err);
     if (err.code === 11000) return res.status(400).json({ success: false, message: 'You already reviewed this product' });
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -68,6 +70,7 @@ exports.markHelpful = async (req, res) => {
     await review.save();
     res.json({ success: true, helpfulCount: review.helpful.length });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };

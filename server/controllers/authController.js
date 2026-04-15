@@ -30,7 +30,8 @@ exports.register = async (req, res) => {
     const user = await User.create({ firstName, lastName, email, password, phone });
     sendTokenResponse(user, 201, res);
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -44,7 +45,8 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     sendTokenResponse(user, 200, res);
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -53,7 +55,8 @@ exports.getMe = async (req, res) => {
     const user = await User.findById(req.user._id).populate('wishlist', 'name price images slug');
     res.json({ success: true, user });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -67,7 +70,8 @@ exports.updateProfile = async (req, res) => {
     );
     res.json({ success: true, user });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -81,6 +85,7 @@ exports.changePassword = async (req, res) => {
     await user.save();
     res.json({ success: true, message: 'Password updated' });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };

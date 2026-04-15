@@ -55,7 +55,8 @@ exports.createOrder = async (req, res) => {
 
     res.status(201).json({ success: true, order });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -66,7 +67,8 @@ exports.getOrders = async (req, res) => {
       .sort('-createdAt');
     res.json({ success: true, orders });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -79,7 +81,8 @@ exports.getOrder = async (req, res) => {
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
     res.json({ success: true, order });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -92,7 +95,8 @@ exports.trackOrder = async (req, res) => {
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
     res.json({ success: true, order });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -109,7 +113,8 @@ exports.requestReturn = async (req, res) => {
     await order.save();
     res.json({ success: true, order });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -136,6 +141,7 @@ exports.updateOrderStatus = async (req, res) => {
 
     res.json({ success: true, order });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };

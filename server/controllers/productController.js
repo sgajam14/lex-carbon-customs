@@ -51,7 +51,8 @@ exports.getProducts = async (req, res) => {
       pagination: { page: Number(page), limit: Number(limit), total, pages: Math.ceil(total / limit) },
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -64,7 +65,8 @@ exports.getProduct = async (req, res) => {
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, product });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -73,7 +75,8 @@ exports.createProduct = async (req, res) => {
     const product = await Product.create(req.body);
     res.status(201).json({ success: true, product });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(400).json({ success: false, message: 'Invalid product data. Please check your input.' });
   }
 };
 
@@ -83,7 +86,8 @@ exports.updateProduct = async (req, res) => {
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, product });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(400).json({ success: false, message: 'Invalid product data. Please check your input.' });
   }
 };
 
@@ -93,7 +97,8 @@ exports.deleteProduct = async (req, res) => {
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
     res.json({ success: true, message: 'Product archived' });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -102,7 +107,8 @@ exports.getFeatured = async (req, res) => {
     const products = await Product.find({ isFeatured: true, isArchived: false }).limit(8);
     res.json({ success: true, products });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -112,7 +118,8 @@ exports.getCategories = async (req, res) => {
     const brands = await Product.distinct('brand', { isArchived: false });
     res.json({ success: true, categories, brands });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -129,6 +136,7 @@ exports.toggleWishlist = async (req, res) => {
     await user.save();
     res.json({ success: true, wishlist: user.wishlist });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };

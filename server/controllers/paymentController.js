@@ -14,7 +14,8 @@ exports.createPaymentIntent = async (req, res) => {
 
     res.json({ success: true, clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Payment could not be initiated. Please try again.' });
   }
 };
 
@@ -36,7 +37,8 @@ exports.confirmPayment = async (req, res) => {
       res.status(400).json({ success: false, message: 'Payment not completed' });
     }
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };
 
@@ -46,7 +48,8 @@ exports.webhook = async (req, res) => {
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    console.error('Stripe webhook error:', err.message);
+    return res.status(400).send('Webhook signature verification failed.');
   }
 
   switch (event.type) {
@@ -90,6 +93,7 @@ exports.refundOrder = async (req, res) => {
 
     res.json({ success: true, refund });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 };

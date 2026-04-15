@@ -8,7 +8,8 @@ router.get('/', async (req, res) => {
     const bundles = await Bundle.find({ isActive: true }).populate('items.product', 'name price images slug');
     res.json({ success: true, bundles });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 });
 
@@ -19,7 +20,8 @@ router.get('/:id', async (req, res) => {
     if (!bundle) return res.status(404).json({ success: false, message: 'Bundle not found' });
     res.json({ success: true, bundle });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 });
 
@@ -28,7 +30,8 @@ router.post('/', protect, admin, async (req, res) => {
     const bundle = await Bundle.create(req.body);
     res.status(201).json({ success: true, bundle });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(400).json({ success: false, message: 'Invalid bundle data. Please check your input.' });
   }
 });
 
@@ -37,7 +40,8 @@ router.put('/:id', protect, admin, async (req, res) => {
     const bundle = await Bundle.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json({ success: true, bundle });
   } catch (err) {
-    res.status(400).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(400).json({ success: false, message: 'Invalid bundle data. Please check your input.' });
   }
 });
 
@@ -46,7 +50,8 @@ router.delete('/:id', protect, admin, async (req, res) => {
     await Bundle.findByIdAndUpdate(req.params.id, { isActive: false });
     res.json({ success: true, message: 'Bundle deactivated' });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
   }
 });
 
