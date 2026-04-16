@@ -1,8 +1,21 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Order = require('../models/Order');
+
+let stripeClient = null;
+
+const getStripeClient = () => {
+  if (stripeClient) return stripeClient;
+  if (!process.env.STRIPE_SECRET_KEY) return null;
+  stripeClient = require('stripe')(process.env.STRIPE_SECRET_KEY);
+  return stripeClient;
+};
 
 exports.createPaymentIntent = async (req, res) => {
   try {
+    const stripe = getStripeClient();
+    if (!stripe) {
+      return res.status(503).json({ success: false, message: 'Payments are not configured yet.' });
+    }
+
     const { orderId, amount } = req.body;
 
     const paymentIntent = await stripe.paymentIntents.create({
@@ -21,6 +34,11 @@ exports.createPaymentIntent = async (req, res) => {
 
 exports.confirmPayment = async (req, res) => {
   try {
+    const stripe = getStripeClient();
+    if (!stripe) {
+      return res.status(503).json({ success: false, message: 'Payments are not configured yet.' });
+    }
+
     const { paymentIntentId, orderId } = req.body;
     const intent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
@@ -43,6 +61,9 @@ exports.confirmPayment = async (req, res) => {
 };
 
 exports.webhook = async (req, res) => {
+  const stripe = getStripeClient();
+  if (!stripe) return res.status(503).json({ success: false, message: 'Payments are not configured yet.' });
+
   const sig = req.headers['stripe-signature'];
   let event;
   try {
@@ -82,6 +103,11 @@ exports.webhook = async (req, res) => {
 
 exports.refundOrder = async (req, res) => {
   try {
+    const stripe = getStripeClient();
+    if (!stripe) {
+      return res.status(503).json({ success: false, message: 'Payments are not configured yet.' });
+    }
+
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
     if (!order.paymentIntentId) return res.status(400).json({ success: false, message: 'No payment to refund' });
