@@ -93,19 +93,45 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/lex-carbon-customs';
 
-const startServer = async () => {
+let reconnectTimer = null;
+let mongoConnectInFlight = false;
+
+const scheduleReconnect = () => {
+  if (reconnectTimer) return;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    connectToMongo();
+  }, 5000);
+};
+
+const connectToMongo = async () => {
+  if (mongoConnectInFlight) return;
+  if (mongoose.connection.readyState === 1 || mongoose.connection.readyState === 2) return;
+
+  mongoConnectInFlight = true;
   try {
     await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 10000,
     });
     console.log('MongoDB connected');
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
   } catch (err) {
     console.error('MongoDB connection failed:', err.message);
-    process.exit(1);
+    scheduleReconnect();
+  } finally {
+    mongoConnectInFlight = false;
   }
 };
 
-startServer();
+mongoose.connection.on('disconnected', () => {
+  console.warn('MongoDB disconnected');
+  scheduleReconnect();
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB error:', err.message);
+});
+
+connectToMongo();
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 module.exports = app;
