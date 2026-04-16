@@ -22,8 +22,29 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // CORS
+const allowedClientOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
+  .map((origin) => {
+    if (!origin.includes('*')) return origin;
+    const escaped = origin.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*');
+    return new RegExp(`^${escaped}$`);
+  });
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow non-browser and same-origin requests without an Origin header.
+    if (!origin) return callback(null, true);
+
+    const allowed = allowedClientOrigins.some((allowedOrigin) => (
+      allowedOrigin instanceof RegExp
+        ? allowedOrigin.test(origin)
+        : allowedOrigin === origin
+    ));
+
+    return callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
+  },
   credentials: true,
 }));
 
