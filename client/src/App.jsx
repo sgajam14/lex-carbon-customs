@@ -14,6 +14,7 @@ const Checkout = lazy(() => import('./pages/Checkout'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const Account = lazy(() => import('./pages/Account'));
+const Wishlist = lazy(() => import('./pages/Wishlist'));
 const OrderHistory = lazy(() => import('./pages/OrderHistory'));
 const OrderDetail = lazy(() => import('./pages/OrderDetail'));
 const OrderTracking = lazy(() => import('./pages/OrderTracking'));
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="/gallery" element={<Gallery />} />
             {/* Protected user routes */}
             <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+            <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
             <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
             {/* Admin routes */}

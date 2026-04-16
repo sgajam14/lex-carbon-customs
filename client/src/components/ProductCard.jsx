@@ -5,12 +5,12 @@ import { formatPrice, getDiscount } from '../utils/formatters';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { productApi } from '../utils/api';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function ProductCard({ product }) {
   const { addItem } = useCart();
-  const { user } = useAuth();
-  const [wishlisted, setWishlisted] = useState(user?.wishlist?.includes(product._id));
+  const { user, fetchMe } = useAuth();
+  const [wishlisted, setWishlisted] = useState(false);
   const [adding, setAdding] = useState(false);
 
   const price = product.onSale && product.salePrice ? product.salePrice : product.price;
@@ -18,6 +18,14 @@ export default function ProductCard({ product }) {
   const primaryImage = product.images?.find(i => i.isPrimary) || product.images?.[0];
   const isLowStock = product.stock <= 3 && product.stock > 0;
   const isOutOfStock = product.stock === 0 && !product.isBackordered;
+  const wishlistIds = useMemo(
+    () => (user?.wishlist || []).map((item) => (typeof item === 'string' ? item : item?._id)).filter(Boolean),
+    [user]
+  );
+
+  useEffect(() => {
+    setWishlisted(wishlistIds.includes(product._id));
+  }, [wishlistIds, product._id]);
 
   const handleAddToCart = async (e) => {
     e.preventDefault();
@@ -31,8 +39,14 @@ export default function ProductCard({ product }) {
     e.preventDefault();
     e.stopPropagation();
     if (!user) return;
-    setWishlisted(v => !v);
-    await productApi.toggleWishlist(product._id).catch(() => setWishlisted(v => !v));
+    const previous = wishlisted;
+    setWishlisted(!previous);
+    try {
+      await productApi.toggleWishlist(product._id);
+      await fetchMe();
+    } catch {
+      setWishlisted(previous);
+    }
   };
 
   return (
@@ -40,10 +54,10 @@ export default function ProductCard({ product }) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
-      className="group"
+      className="group h-full"
     >
-      <Link to={`/shop/${product.slug || product._id}`} className="block">
-        <div className="dark:bg-dark-surface bg-white dark:border-dark-border border-light-border border rounded-xl overflow-hidden transition-all duration-300 dark:hover:border-brand-red/40 hover:shadow-xl dark:hover:shadow-brand-red/5">
+      <Link to={`/shop/${product.slug || product._id}`} className="block h-full">
+        <div className="h-full flex flex-col dark:bg-dark-surface bg-white dark:border-dark-border border-light-border border rounded-xl overflow-hidden transition-all duration-300 dark:hover:border-brand-red/40 hover:shadow-xl dark:hover:shadow-brand-red/5">
           {/* Image */}
           <div className="relative aspect-[4/3] overflow-hidden dark:bg-dark-surface-2 bg-gray-100">
             {primaryImage ? (
@@ -91,7 +105,7 @@ export default function ProductCard({ product }) {
           </div>
 
           {/* Info */}
-          <div className="p-4">
+          <div className="p-4 flex flex-col flex-1">
             {/* Brand + Finish */}
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-heading font-semibold tracking-widest uppercase text-brand-red">
@@ -129,7 +143,7 @@ export default function ProductCard({ product }) {
             )}
 
             {/* Price + Add to cart */}
-            <div className="flex items-center justify-between">
+            <div className="mt-auto pt-3 flex items-center justify-between">
               <div>
                 <span className="font-heading font-bold text-xl dark:text-white text-gray-900">
                   {formatPrice(price)}

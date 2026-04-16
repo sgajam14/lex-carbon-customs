@@ -2,6 +2,8 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const { sendOrderConfirmation, sendShippingNotification } = require('../utils/email');
 
+const CANCELLABLE_STATUSES = ['Pending', 'Confirmed'];
+
 exports.createOrder = async (req, res) => {
   try {
     const { items, shippingAddress, billingAddress, shippingMethod, notes, guestEmail, guestName, financingProvider } = req.body;
@@ -111,6 +113,40 @@ exports.requestReturn = async (req, res) => {
     order.returnRequest = { requested: true, reason, requestedAt: new Date(), status: 'Pending' };
     order.status = 'Return Requested';
     await order.save();
+    res.json({ success: true, order });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
+  }
+};
+
+exports.cancelOrder = async (req, res) => {
+  try {
+    const order = await Order.findOne({ _id: req.params.id, user: req.user._id });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    if (!CANCELLABLE_STATUSES.includes(order.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Order can only be cancelled while ${CANCELLABLE_STATUSES.join(' or ')}`,
+      });
+    }
+
+    order.status = 'Cancelled';
+    await order.save();
+
+    const stockUpdates = order.items
+      .filter(item => item.product && item.qty > 0)
+      .map(item => ({
+        updateOne: {
+          filter: { _id: item.product },
+          update: { $inc: { stock: item.qty } },
+        },
+      }));
+
+    if (stockUpdates.length) {
+      await Product.bulkWrite(stockUpdates);
+    }
+
     res.json({ success: true, order });
   } catch (err) {
     console.error(err);

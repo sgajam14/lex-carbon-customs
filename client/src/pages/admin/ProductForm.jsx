@@ -1,18 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Plus, X, ArrowLeft, Save } from 'lucide-react';
+import { Plus, X, Save, Upload } from 'lucide-react';
 import { productApi } from '../../utils/api';
+import BackToDashboardButton from '../../components/admin/BackToDashboardButton';
 
 const CATEGORIES = ['Hood', 'Trunk Lid', 'Spoiler', 'Diffuser', 'Side Skirts', 'Front Bumper', 'Rear Bumper', 'Fenders', 'Mirrors', 'Hood Vents', 'Canards', 'Interior Trim', 'Roof Panel', 'Other'];
 const FINISHES = ['Dry Carbon', 'Wet Carbon', 'Forged Carbon', 'Carbon Kevlar', 'Pre-Preg', 'Other'];
 const BRAND_TIERS = ['Budget', 'Mid-Range', 'Premium', 'OEM-Style'];
 const DIFFICULTY = ['Beginner', 'Intermediate', 'Advanced', 'Professional'];
 
+const ensurePrimaryImage = (images = []) => {
+  if (!images.length) return [];
+  if (images.some(img => img.isPrimary)) return images;
+  return images.map((img, idx) => ({ ...img, isPrimary: idx === 0 }));
+};
+
 const defaultForm = {
   name: '', description: '', shortDescription: '', price: '', salePrice: '', onSale: false,
   category: 'Hood', brand: '', brandTier: 'Mid-Range', finish: 'Dry Carbon',
   sku: '', stock: '0', leadTime: '', weight: '', isBackordered: false, isFeatured: false,
-  images: [{ url: '', alt: '', isPrimary: true }],
+  images: [],
   fitment: [{ make: '', model: '', yearFrom: '', yearTo: '', requiresModification: false, fitmentConfidence: 100 }],
   installInfo: { difficulty: 'Intermediate', timeEstimate: '', requiredTools: [], notes: '' },
   tags: [],
@@ -25,6 +32,7 @@ export default function ProductForm() {
   const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState(false);
   const [error, setError] = useState('');
   const [toolInput, setToolInput] = useState('');
   const [tagInput, setTagInput] = useState('');
@@ -33,13 +41,14 @@ export default function ProductForm() {
     if (isEdit) {
       productApi.getOne(id).then(({ data }) => {
         const p = data.product;
+        const initialImages = ensurePrimaryImage(p.images?.length ? p.images : defaultForm.images);
         setForm({
           ...defaultForm, ...p,
           price: String(p.price),
           salePrice: String(p.salePrice || ''),
           stock: String(p.stock || 0),
           weight: String(p.weight || ''),
-          images: p.images?.length ? p.images : defaultForm.images,
+          images: initialImages,
           fitment: p.fitment?.length ? p.fitment.map(f => ({ ...f, yearFrom: String(f.yearFrom), yearTo: String(f.yearTo) })) : defaultForm.fitment,
           installInfo: p.installInfo || defaultForm.installInfo,
           tags: p.tags || [],
@@ -56,8 +65,36 @@ export default function ProductForm() {
     imgs[i] = { ...imgs[i], [key]: value };
     set('images', imgs);
   };
-  const addImage = () => set('images', [...form.images, { url: '', alt: '', isPrimary: false }]);
-  const removeImage = (i) => set('images', form.images.filter((_, idx) => idx !== i));
+
+  const setPrimaryImage = (i) => {
+    const imgs = form.images.map((img, idx) => ({ ...img, isPrimary: idx === i }));
+    set('images', imgs);
+  };
+
+  const removeImage = (i) => {
+    const next = form.images.filter((_, idx) => idx !== i);
+    set('images', ensurePrimaryImage(next));
+  };
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    setUploadingImages(true);
+    setError('');
+    try {
+      const formData = new FormData();
+      files.forEach(file => formData.append('images', file));
+      const { data } = await productApi.uploadImages(formData);
+      const merged = ensurePrimaryImage([...form.images, ...(data.images || [])]);
+      set('images', merged);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to upload image(s)');
+    } finally {
+      setUploadingImages(false);
+      e.target.value = '';
+    }
+  };
 
   const updateFitment = (i, key, value) => {
     const f = [...form.fitment];
@@ -95,7 +132,7 @@ export default function ProductForm() {
         stock: parseInt(form.stock),
         weight: form.weight ? parseFloat(form.weight) : undefined,
         fitment: form.fitment.map(f => ({ ...f, yearFrom: parseInt(f.yearFrom), yearTo: parseInt(f.yearTo) })).filter(f => f.make && f.model),
-        images: form.images.filter(i => i.url),
+        images: ensurePrimaryImage(form.images.filter(i => i.url)),
       };
       if (isEdit) {
         await productApi.update(id, payload);
@@ -120,9 +157,7 @@ export default function ProductForm() {
     <div className="pt-[88px] min-h-screen dark:bg-dark-bg bg-light-bg">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-3 mb-6">
-          <Link to="/admin/products" className="p-2 dark:text-gray-400 text-gray-500 hover:text-brand-red transition-colors">
-            <ArrowLeft size={18} />
-          </Link>
+          <BackToDashboardButton />
           <h1 className="font-display font-bold text-2xl dark:text-white text-gray-900">
             {isEdit ? 'Edit Product' : 'New Product'}
           </h1>
@@ -220,25 +255,40 @@ export default function ProductForm() {
           <div className="dark:bg-dark-surface bg-white border dark:border-dark-border border-light-border rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-heading font-bold dark:text-white text-gray-900 uppercase tracking-wider text-sm">Images</h2>
-              <button type="button" onClick={addImage} className="text-xs text-brand-red hover:underline flex items-center gap-1"><Plus size={12} /> Add Image</button>
+              <label className="btn-outline !py-1.5 !px-3 text-xs cursor-pointer flex items-center gap-1.5">
+                <Upload size={12} />
+                {uploadingImages ? 'Uploading...' : 'Upload Images'}
+                <input type="file" accept="image/*" multiple onChange={handleImageUpload} className="hidden" disabled={uploadingImages} />
+              </label>
             </div>
+            <p className="text-xs dark:text-gray-500 text-gray-400">Upload up to 8 images, max 5MB each.</p>
+            {form.images.length === 0 && (
+              <div className="text-xs dark:text-gray-500 text-gray-400 border dark:border-dark-border border-light-border rounded-lg p-3">
+                No images uploaded yet.
+              </div>
+            )}
             {form.images.map((img, i) => (
-              <div key={i} className="grid grid-cols-2 gap-2 items-start relative">
-                <input type="url" value={img.url} onChange={e => updateImage(i, 'url', e.target.value)} placeholder="Image URL" className="input-dark !text-sm" />
-                <input type="text" value={img.alt} onChange={e => updateImage(i, 'alt', e.target.value)} placeholder="Alt text" className="input-dark !text-sm" />
-                <div className="flex items-center gap-3 col-span-2">
-                  <label className="flex items-center gap-1.5 text-xs dark:text-gray-300 text-gray-600 cursor-pointer">
-                    <input type="checkbox" checked={img.isPrimary} onChange={e => updateImage(i, 'isPrimary', e.target.checked)} className="accent-brand-red" />
-                    Primary
-                  </label>
-                  <select value={img.isBeforeAfter || ''} onChange={e => updateImage(i, 'isBeforeAfter', e.target.value || null)} className="input-dark !text-xs !py-1 !w-auto">
-                    <option value="">Regular</option>
-                    <option value="before">Before</option>
-                    <option value="after">After</option>
-                  </select>
-                  {form.images.length > 1 && (
-                    <button type="button" onClick={() => removeImage(i)} className="text-red-400 hover:text-red-300 ml-auto"><X size={14} /></button>
-                  )}
+              <div key={i} className="dark:bg-dark-surface-2 bg-gray-50 border dark:border-dark-border border-light-border rounded-lg p-3">
+                <div className="grid md:grid-cols-[96px_1fr] gap-3 items-start">
+                  <div className="w-24 h-24 rounded-lg overflow-hidden dark:bg-dark-surface bg-gray-100 border dark:border-dark-border border-light-border">
+                    {img.url ? <img src={img.url} alt={img.alt || ''} className="w-full h-full object-cover" /> : null}
+                  </div>
+                  <div className="space-y-2">
+                    <input type="text" value={img.alt} onChange={e => updateImage(i, 'alt', e.target.value)} placeholder="Alt text" className="input-dark !text-sm" />
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-1.5 text-xs dark:text-gray-300 text-gray-600 cursor-pointer">
+                        <input type="radio" name="primary-image" checked={!!img.isPrimary} onChange={() => setPrimaryImage(i)} className="accent-brand-red" />
+                        Primary
+                      </label>
+                      <select value={img.isBeforeAfter || ''} onChange={e => updateImage(i, 'isBeforeAfter', e.target.value || null)} className="input-dark !text-xs !py-1 !w-auto">
+                        <option value="">Regular</option>
+                        <option value="before">Before</option>
+                        <option value="after">After</option>
+                      </select>
+                      <button type="button" onClick={() => removeImage(i)} className="text-red-400 hover:text-red-300 ml-auto"><X size={14} /></button>
+                    </div>
+                    <p className="text-[11px] dark:text-gray-500 text-gray-400 truncate">{img.url}</p>
+                  </div>
                 </div>
               </div>
             ))}

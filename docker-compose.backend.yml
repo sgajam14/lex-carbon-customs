@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: lex-carbon-backend
+    ports:
+      - "5001:5001"
+    environment:
+      PORT: 5001
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongo:27017/lex-carbon-customs
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      JWT_EXPIRE: ${JWT_EXPIRE:-7d}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      EMAIL_HOST: ${EMAIL_HOST:-}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASS: ${EMAIL_PASS:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      NHTSA_API_URL: ${NHTSA_API_URL:-https://vpic.nhtsa.dot.gov/api}
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      - mongo
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    container_name: lex-carbon-mongo
+    ports:
+      - "29022:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+volumes:
+  backend_uploads:
+  mongo_data:

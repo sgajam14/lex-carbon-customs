@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Edit, Archive, AlertTriangle, Search, Package } from 'lucide-react';
 import { productApi, adminApi } from '../../utils/api';
 import { formatPrice } from '../../utils/formatters';
+import BackToDashboardButton from '../../components/admin/BackToDashboardButton';
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -41,7 +42,10 @@ export default function AdminProducts() {
     <div className="pt-[88px] min-h-screen dark:bg-dark-bg bg-light-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="font-display font-bold text-2xl dark:text-white text-gray-900">Products</h1>
+          <div className="flex items-center gap-3">
+            <BackToDashboardButton />
+            <h1 className="font-display font-bold text-2xl dark:text-white text-gray-900">Products</h1>
+          </div>
           <Link to="/admin/products/new" className="btn-primary flex items-center gap-1.5 text-sm">
             <Plus size={15} /> Add Product
           </Link>

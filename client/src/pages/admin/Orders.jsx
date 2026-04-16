@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, ExternalLink, Edit } from 'lucide-react';
 import { adminApi, orderApi } from '../../utils/api';
 import { formatPrice, formatDate, getStatusColor } from '../../utils/formatters';
+import BackToDashboardButton from '../../components/admin/BackToDashboardButton';
 
 const ORDER_STATUSES = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Refunded', 'Return Requested'];
 
@@ -48,7 +49,10 @@ export default function AdminOrders() {
   return (
     <div className="pt-[88px] min-h-screen dark:bg-dark-bg bg-light-bg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-        <h1 className="font-display font-bold text-2xl dark:text-white text-gray-900 mb-6">Orders</h1>
+        <div className="flex items-center gap-3 mb-6">
+          <BackToDashboardButton />
+          <h1 className="font-display font-bold text-2xl dark:text-white text-gray-900">Orders</h1>
+        </div>
 
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-5">

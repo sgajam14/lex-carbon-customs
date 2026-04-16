@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { ExternalLink, RotateCcw, Download, CheckCircle } from 'lucide-react';
+import { ExternalLink, RotateCcw, Download, CheckCircle, XCircle } from 'lucide-react';
 import { orderApi } from '../utils/api';
 import { formatPrice, formatDate, getStatusColor, getCarrierTrackingUrl } from '../utils/formatters';
 import OrderStatusTimeline from '../components/OrderStatusTimeline';
+
+const CANCELLABLE_STATUSES = ['Pending', 'Confirmed'];
 
 export default function OrderDetail() {
   const { id } = useParams();
@@ -11,6 +13,7 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [returning, setReturning] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [returnReason, setReturnReason] = useState('');
   const isSuccess = searchParams.get('success') === 'true';
 
@@ -29,6 +32,21 @@ export default function OrderDetail() {
     }
   };
 
+  const handleCancelOrder = async () => {
+    const confirmed = window.confirm('Cancel this order? This action cannot be undone.');
+    if (!confirmed) return;
+
+    setCancelling(true);
+    try {
+      const { data } = await orderApi.cancel(id);
+      setOrder(data.order);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error cancelling order');
+    } finally {
+      setCancelling(false);
+    }
+  };
+
   if (loading) return (
     <div className="pt-[88px] min-h-screen flex items-center justify-center">
       <div className="w-10 h-10 border-2 border-brand-red border-t-transparent rounded-full animate-spin" />
@@ -42,6 +60,7 @@ export default function OrderDetail() {
   );
 
   const trackingUrl = getCarrierTrackingUrl(order.carrier, order.trackingNumber);
+  const canCancelOrder = CANCELLABLE_STATUSES.includes(order.status);
 
   return (
     <div className="pt-[88px] min-h-screen">
@@ -158,6 +177,15 @@ export default function OrderDetail() {
           <button onClick={() => window.print()} className="btn-outline flex items-center gap-2 text-sm">
             <Download size={14} /> Download Invoice
           </button>
+          {canCancelOrder && (
+            <button
+              onClick={handleCancelOrder}
+              disabled={cancelling}
+              className="btn-ghost border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded text-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              <XCircle size={14} /> {cancelling ? 'Cancelling...' : 'Cancel Order'}
+            </button>
+          )}
           {order.status === 'Delivered' && !order.returnRequest?.requested && (
             <button onClick={() => setReturning(v => !v)} className="btn-ghost border dark:border-dark-border border-light-border rounded text-sm flex items-center gap-2">
               <RotateCcw size={14} /> Request Return

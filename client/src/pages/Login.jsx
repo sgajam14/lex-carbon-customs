@@ -8,6 +8,7 @@ export default function Login() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [accountNotFound, setAccountNotFound] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -17,14 +18,27 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setAccountNotFound(false);
     try {
       await login(form.email, form.password);
       navigate(from, { replace: true });
     } catch (err) {
+      const status = err.response?.status;
+      const code = err.response?.data?.code;
       setError(err.response?.data?.message || 'Login failed');
+      setAccountNotFound(status === 404 || code === 'ACCOUNT_NOT_FOUND');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCreateAccount = () => {
+    navigate('/register', {
+      state: {
+        prefillEmail: form.email.trim(),
+        fromLogin: true,
+      },
+    });
   };
 
   return (
@@ -48,7 +62,10 @@ export default function Login() {
               <input
                 type="email"
                 value={form.email}
-                onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+                onChange={(e) => {
+                  setForm(f => ({ ...f, email: e.target.value }));
+                  setAccountNotFound(false);
+                }}
                 className="input-dark"
                 placeholder="you@example.com"
                 required
@@ -61,7 +78,10 @@ export default function Login() {
                 <input
                   type={showPw ? 'text' : 'password'}
                   value={form.password}
-                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+                  onChange={(e) => {
+                    setForm(f => ({ ...f, password: e.target.value }));
+                    setAccountNotFound(false);
+                  }}
                   className="input-dark pr-10"
                   placeholder="••••••••"
                   required
@@ -77,6 +97,16 @@ export default function Login() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+
+          {accountNotFound && (
+            <button
+              type="button"
+              onClick={handleCreateAccount}
+              className="mt-4 w-full border border-brand-red/50 text-brand-red hover:bg-brand-red/10 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors"
+            >
+              No account found - Create Account
+            </button>
+          )}
         </div>
 
         <p className="text-center text-sm dark:text-gray-400 text-gray-500 mt-4">

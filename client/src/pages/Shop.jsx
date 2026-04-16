@@ -120,14 +120,14 @@ export default function Shop() {
 
             {/* Grid */}
             {loading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-5 items-stretch">
                 {Array.from({ length: 12 }).map((_, i) => (
                   <div key={i} className="dark:bg-dark-surface-2 bg-gray-200 rounded-xl aspect-[4/3] animate-pulse" />
                 ))}
               </div>
             ) : products.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-5 items-stretch">
                   {products.map(p => <ProductCard key={p._id} product={p} />)}
                 </div>
                 {/* Pagination */}

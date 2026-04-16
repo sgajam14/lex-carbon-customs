@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { Shield, Lock } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -11,16 +11,51 @@ import { formatPrice } from '../utils/formatters';
 // Replace with your Stripe publishable key
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
-const CARD_ELEMENT_OPTIONS = {
-  style: {
-    base: {
-      color: '#ffffff',
-      fontFamily: 'Inter, sans-serif',
-      fontSize: '14px',
-      '::placeholder': { color: '#6b7280' },
-      backgroundColor: 'transparent',
+const PAYMENT_ELEMENT_OPTIONS = {
+  layout: { type: 'tabs', defaultCollapsed: false },
+  paymentMethodOrder: ['card', 'link', 'cashapp', 'paypal', 'klarna', 'afterpay_clearpay'],
+  wallets: {
+    applePay: 'auto',
+    googlePay: 'auto',
+  },
+};
+
+const EXPRESS_CHECKOUT_OPTIONS = {
+  buttonHeight: 46,
+  layout: { maxColumns: 2, maxRows: 2, overflow: 'auto' },
+  paymentMethodOrder: ['google_pay', 'apple_pay', 'link', 'paypal'],
+};
+
+const ELEMENTS_APPEARANCE = {
+  theme: 'night',
+  variables: {
+    colorPrimary: '#ef232a',
+    colorBackground: '#111114',
+    colorText: '#ffffff',
+    colorDanger: '#ef4444',
+    colorTextSecondary: '#9ca3af',
+    borderRadius: '12px',
+    fontFamily: 'Inter, sans-serif',
+  },
+  rules: {
+    '.Input': {
+      border: '1px solid #2a2b31',
+      boxShadow: 'none',
     },
-    invalid: { color: '#EF4444' },
+    '.Input:focus': {
+      border: '1px solid #ef232a',
+      boxShadow: '0 0 0 1px #ef232a',
+    },
+    '.Tab': {
+      border: '1px solid #2a2b31',
+      backgroundColor: '#1a1b20',
+    },
+    '.Tab:hover': {
+      border: '1px solid #3a3b42',
+    },
+    '.Tab--selected': {
+      border: '1px solid #ef232a',
+    },
   },
 };
 
@@ -29,6 +64,33 @@ function CheckoutForm({ order, clientSecret, onSuccess }) {
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [walletsAvailable, setWalletsAvailable] = useState(false);
+
+  const confirmAndFinalizePayment = async () => {
+    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      clientSecret,
+      confirmParams: {
+        return_url: `${window.location.origin}/orders/${order._id}?success=true`,
+      },
+      redirect: 'if_required',
+    });
+
+    if (stripeError) {
+      throw new Error(stripeError.message || 'Payment failed. Please try again.');
+    }
+
+    if (paymentIntent?.status === 'succeeded') {
+      await paymentApi.confirm({ paymentIntentId: paymentIntent.id, orderId: order._id });
+      onSuccess(order._id);
+      return;
+    }
+
+    if (paymentIntent?.status === 'processing') {
+      onSuccess(order._id);
+      return;
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,21 +99,30 @@ function CheckoutForm({ order, clientSecret, onSuccess }) {
     setError('');
 
     try {
-      const { paymentIntent, error: stripeError } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: elements.getElement(CardElement),
-          billing_details: { name: `${order.shippingAddress?.firstName} ${order.shippingAddress?.lastName}` },
-        },
-      });
-
-      if (stripeError) {
-        setError(stripeError.message);
-      } else if (paymentIntent.status === 'succeeded') {
-        await paymentApi.confirm({ paymentIntentId: paymentIntent.id, orderId: order._id });
-        onSuccess(order._id);
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        setError(submitError.message || 'Please complete your payment details.');
+        return;
       }
+
+      await confirmAndFinalizePayment();
     } catch (err) {
-      setError(err.response?.data?.message || 'Payment failed. Please try again.');
+      setError(err.message || err.response?.data?.message || 'Payment failed. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleExpressConfirm = async (event) => {
+    if (!stripe || !elements || !clientSecret) return;
+    setProcessing(true);
+    setError('');
+
+    try {
+      await confirmAndFinalizePayment();
+    } catch (err) {
+      event.paymentFailed();
+      setError(err.message || 'Express checkout failed. Please try another payment option.');
     } finally {
       setProcessing(false);
     }
@@ -60,7 +131,29 @@ function CheckoutForm({ order, clientSecret, onSuccess }) {
   return (
     <form onSubmit={handleSubmit}>
       <div className="dark:bg-dark-surface-2 bg-gray-50 border dark:border-dark-border border-light-border rounded-lg p-4 mb-4">
-        <CardElement options={CARD_ELEMENT_OPTIONS} />
+        <ExpressCheckoutElement
+          options={EXPRESS_CHECKOUT_OPTIONS}
+          onConfirm={handleExpressConfirm}
+          onReady={(event) => {
+            const available = event?.availablePaymentMethods;
+            setWalletsAvailable(Boolean(available && (available.googlePay || available.applePay)));
+          }}
+        />
+      </div>
+
+      {walletsAvailable && (
+        <div className="relative mb-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t dark:border-dark-border border-light-border" />
+          </div>
+          <div className="relative flex justify-center">
+            <span className="px-3 text-xs dark:text-gray-500 text-gray-400 uppercase tracking-wide dark:bg-dark-surface bg-white">Or pay with card / other methods</span>
+          </div>
+        </div>
+      )}
+
+      <div className="dark:bg-dark-surface-2 bg-gray-50 border dark:border-dark-border border-light-border rounded-lg p-4 mb-4">
+        <PaymentElement options={PAYMENT_ELEMENT_OPTIONS} />
       </div>
       {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
       <button
@@ -249,7 +342,7 @@ export default function Checkout() {
                 <h3 className="font-heading font-bold text-base dark:text-white text-gray-900 mb-4 flex items-center gap-2">
                   <Lock size={16} className="text-brand-red" /> Payment
                 </h3>
-                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                <Elements stripe={stripePromise} options={{ clientSecret, appearance: ELEMENTS_APPEARANCE }}>
                   <CheckoutForm order={order} clientSecret={clientSecret} onSuccess={handleSuccess} />
                 </Elements>
                 <p className="text-xs dark:text-gray-500 text-gray-400 text-center mt-4 flex items-center justify-center gap-1">

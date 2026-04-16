@@ -7,14 +7,20 @@ import FitmentLookup from '../components/FitmentLookup';
 import BundleCard from '../components/BundleCard';
 import BeforeAfterSlider from '../components/BeforeAfterSlider';
 import { productApi, bundleApi } from '../utils/api';
+import carbonHoodImage from '../assets/carbonHood2.jpeg';
+import carbonSpoilerImage from '../assets/carbonSpoiler.jpg';
+import carbonDiffuserImage from '../assets/carbonDiffuser.jpg';
+import carbonBumperImage from '../assets/carbonBumper.jpg';
+import carbonInteriorImage from '../assets/carbonInterior.jpg';
+import carbonSideSkirtsImage from '../assets/carbonSideSkirts.png';
 
 const CATEGORIES = [
-  { name: 'Hoods', icon: '🚗', href: '/shop?category=Hood' },
-  { name: 'Spoilers', icon: '✈️', href: '/shop?category=Spoiler' },
-  { name: 'Diffusers', icon: '🔧', href: '/shop?category=Diffuser' },
-  { name: 'Side Skirts', icon: '⚡', href: '/shop?category=Side+Skirts' },
-  { name: 'Front Bumpers', icon: '🏁', href: '/shop?category=Front+Bumper' },
-  { name: 'Interior', icon: '🎯', href: '/shop?category=Interior+Trim' },
+  { name: 'Hoods', href: '/shop?category=Hood', image: carbonHoodImage },
+  { name: 'Spoilers', href: '/shop?category=Spoiler', image: carbonSpoilerImage },
+  { name: 'Diffusers', href: '/shop?category=Diffuser', image: carbonDiffuserImage },
+  { name: 'Side Skirts', href: '/shop?category=Side+Skirts', image: carbonSideSkirtsImage },
+  { name: 'Front Bumpers', href: '/shop?category=Front+Bumper', image: carbonBumperImage },
+  { name: 'Interior', href: '/shop?category=Interior+Trim', image: carbonInteriorImage },
 ];
 
 export default function Home() {
@@ -116,16 +122,44 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          {CATEGORIES.map(cat => (
-            <Link
-              key={cat.name}
-              to={cat.href}
-              className="group dark:bg-dark-surface bg-white border dark:border-dark-border border-light-border rounded-xl p-4 text-center hover:border-brand-red/50 hover:shadow-lg dark:hover:shadow-brand-red/5 transition-all"
-            >
-              <span className="text-3xl block mb-2">{cat.icon}</span>
-              <span className="font-heading font-semibold text-sm dark:text-white text-gray-900 group-hover:text-brand-red transition-colors">{cat.name}</span>
-            </Link>
-          ))}
+          {CATEGORIES.map((cat) => {
+            const hasImage = !!cat.image;
+            return (
+              <Link
+                key={cat.name}
+                to={cat.href}
+                className={`group relative rounded-xl text-center hover:border-brand-red/50 hover:shadow-lg dark:hover:shadow-brand-red/5 transition-all min-h-[112px] overflow-hidden ${
+                  hasImage
+                    ? 'border border-dark-border'
+                    : 'dark:bg-dark-surface bg-white border dark:border-dark-border border-light-border p-4'
+                }`}
+              >
+                {hasImage && (
+                  <>
+                    <img
+                      src={cat.image}
+                      alt={`${cat.name} category`}
+                      className="absolute inset-0 w-full h-full object-cover grayscale contrast-125 brightness-75 group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-colors" />
+                  </>
+                )}
+
+                <div className={`relative z-10 h-full flex flex-col items-center justify-center ${hasImage ? 'px-3 py-4' : ''}`}>
+                  {!hasImage && <span className="text-3xl block mb-2">{cat.icon}</span>}
+                  <span
+                    className={`font-heading font-semibold text-sm transition-colors ${
+                      hasImage
+                        ? 'text-white bg-black/65 border border-white/25 rounded px-2.5 py-1 tracking-wide shadow-[0_2px_10px_rgba(0,0,0,0.5)]'
+                        : 'dark:text-white text-gray-900 group-hover:text-brand-red'
+                    }`}
+                  >
+                    {cat.name}
+                  </span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, Moon, Sun, Menu, X, ChevronDown, Car, Shield, Search } from 'lucide-react';
+import { ShoppingCart, User, Moon, Sun, Menu, X, ChevronDown, Car, Shield, Search, Package, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
@@ -12,12 +12,18 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [userDropdown, setUserDropdown] = useState(false);
+  const [topBarMessageIndex, setTopBarMessageIndex] = useState(0);
   const { user, logout, isAdmin } = useAuth();
   const { count } = useCart();
   const { isDark, toggle } = useTheme();
   const { activeVehicle } = useGarage();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const topBarMessages = [
+    'FREE SHIPPING ON ORDERS OVER $500 | GUARANTEED FIT OR MONEY BACK',
+    'Need Help? Contact us: (667) 786-9362',
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -29,6 +35,14 @@ export default function Navbar() {
     setMobileOpen(false);
     setUserDropdown(false);
   }, [location]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setTopBarMessageIndex((prev) => (prev + 1) % topBarMessages.length);
+    }, 3500);
+
+    return () => clearInterval(intervalId);
+  }, [topBarMessages.length]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -54,18 +68,21 @@ export default function Navbar() {
     }`}>
       {/* Top bar */}
       <div className="dark:bg-dark-surface-2 bg-gray-100 border-b dark:border-dark-border border-light-border py-1.5 px-4 hidden md:block">
-        <div className="max-w-7xl mx-auto flex items-center justify-between text-xs">
-          <span className="dark:text-gray-400 text-gray-500 font-heading tracking-wider">
-            FREE SHIPPING ON ORDERS OVER $500 | GUARANTEED FIT OR MONEY BACK
+        <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto_1fr] items-center text-xs min-h-[20px]">
+          <div />
+          <span
+            key={topBarMessageIndex}
+            className="font-heading tracking-wider text-center px-2 animate-fade-in dark:text-white text-black"
+          >
+            {topBarMessages[topBarMessageIndex]}
           </span>
-          <div className="flex items-center gap-4 dark:text-gray-400 text-gray-500">
+          <div className="justify-self-end">
             {activeVehicle && (
-              <span className="flex items-center gap-1.5 text-brand-red font-medium">
+              <span className="flex items-center gap-1.5 text-brand-red font-medium whitespace-nowrap">
                 <Car size={12} />
                 {activeVehicle.year} {activeVehicle.make} {activeVehicle.model}
               </span>
             )}
-            <span>Need Help? (555) 867-5309</span>
           </div>
         </div>
       </div>
@@ -156,7 +173,10 @@ export default function Navbar() {
                       <User size={14} /> My Account
                     </Link>
                     <Link to="/orders" className="flex items-center gap-2 px-4 py-2 text-sm dark:text-gray-300 text-gray-600 dark:hover:bg-dark-surface-2 hover:bg-gray-50 transition-colors">
-                      Orders
+                      <Package size={14} /> Orders
+                    </Link>
+                    <Link to="/wishlist" className="flex items-center gap-2 px-4 py-2 text-sm dark:text-gray-300 text-gray-600 dark:hover:bg-dark-surface-2 hover:bg-gray-50 transition-colors">
+                      <Heart size={14} /> Wishlist
                     </Link>
                     <Link to="/build" className="flex items-center gap-2 px-4 py-2 text-sm dark:text-gray-300 text-gray-600 dark:hover:bg-dark-surface-2 hover:bg-gray-50 transition-colors">
                       <Car size={14} /> My Garage

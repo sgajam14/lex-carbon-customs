@@ -41,8 +41,18 @@ exports.login = async (req, res) => {
     if (!email || !password)
       return res.status(400).json({ success: false, message: 'Email and password required' });
     const user = await User.findOne({ email }).select('+password');
-    if (!user || !(await user.matchPassword(password)))
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        code: 'ACCOUNT_NOT_FOUND',
+        message: 'No account found for this email. Please create an account.',
+      });
+    }
+
+    if (!(await user.matchPassword(password)))
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
     sendTokenResponse(user, 200, res);
   } catch (err) {
     console.error(err);
@@ -52,7 +62,10 @@ exports.login = async (req, res) => {
 
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate('wishlist', 'name price images slug');
+    const user = await User.findById(req.user._id).populate(
+      'wishlist',
+      'name slug price salePrice onSale images brand finish stock isBackordered isFeatured leadTime rating reviewCount'
+    );
     res.json({ success: true, user });
   } catch (err) {
     console.error(err);

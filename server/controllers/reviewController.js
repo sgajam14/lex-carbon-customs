@@ -1,12 +1,23 @@
 const Review = require('../models/Review');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const mongoose = require('mongoose');
 
 exports.getReviews = async (req, res) => {
   try {
     const { productId, page = 1, limit = 10 } = req.query;
     const query = { isApproved: true };
-    if (productId) query.product = productId;
+    if (productId) {
+      if (mongoose.Types.ObjectId.isValid(productId)) {
+        query.product = productId;
+      } else {
+        const product = await Product.findOne({ slug: productId }).select('_id').lean();
+        if (!product) {
+          return res.json({ success: true, reviews: [], total: 0 });
+        }
+        query.product = product._id;
+      }
+    }
     const skip = (page - 1) * limit;
     const total = await Review.countDocuments(query);
     const reviews = await Review.find(query)

@@ -45,13 +45,13 @@ export default function Footer() {
           <div>
             <h4 className="font-heading font-bold text-white tracking-widest uppercase text-sm mb-4">Account</h4>
             <ul className="space-y-2">
-              {[
-                { label: 'My Account', href: '/account' },
-                { label: 'Order History', href: '/orders' },
-                { label: 'Track Order', href: '/track' },
-                { label: 'My Garage', href: '/build' },
-                { label: 'Wishlist', href: '/account' },
-              ].map(item => (
+                {[
+                  { label: 'My Account', href: '/account' },
+                  { label: 'Order History', href: '/orders' },
+                  { label: 'Track Order', href: '/track' },
+                  { label: 'My Garage', href: '/build' },
+                  { label: 'Wishlist', href: '/wishlist' },
+                ].map(item => (
                 <li key={item.href}>
                   <Link to={item.href} className="text-gray-400 hover:text-brand-red text-sm transition-colors">
                     {item.label}

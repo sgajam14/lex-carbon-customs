@@ -1,10 +1,19 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Register() {
-  const [form, setForm] = useState({ firstName: '', lastName: '', email: '', password: '', confirmPassword: '', phone: '' });
+  const location = useLocation();
+  const prefillEmail = location.state?.prefillEmail || '';
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: prefillEmail,
+    password: '',
+    confirmPassword: '',
+    phone: '',
+  });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,6 +46,11 @@ export default function Register() {
         </div>
 
         <div className="dark:bg-dark-surface bg-white border dark:border-dark-border border-light-border rounded-xl p-6">
+          {location.state?.fromLogin && (
+            <div className="bg-brand-red/10 border border-brand-red/30 text-brand-red text-sm px-4 py-3 rounded-lg mb-4">
+              We could not find an account for that email. Create one below.
+            </div>
+          )}
           {error && (
             <div className="bg-red-900/20 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-lg mb-4">{error}</div>
           )}

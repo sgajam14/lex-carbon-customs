@@ -21,7 +21,7 @@ export default function FitmentLookup({ onFitmentSelect, compact = false }) {
 
   useEffect(() => {
     vehicleApi.getYears().then(({ data }) => setYears(data.years || []));
-    vehicleApi.getMakes().then(({ data }) => setMakes((data.makes || []).slice(0, 100)));
+    vehicleApi.getMakes().then(({ data }) => setMakes(data.makes || []));
   }, []);
 
   useEffect(() => {

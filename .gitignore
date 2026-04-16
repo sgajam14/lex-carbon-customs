@@ -6,3 +6,4 @@ dist/
 *.log
 coverage/
 .cache/
+server/uploads/

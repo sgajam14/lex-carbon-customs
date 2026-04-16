@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const path = require('path');
 
 exports.getProducts = async (req, res) => {
   try {
@@ -80,6 +81,29 @@ exports.createProduct = async (req, res) => {
   }
 };
 
+exports.uploadProductImages = async (req, res) => {
+  try {
+    if (!req.files?.length) {
+      return res.status(400).json({ success: false, message: 'Please upload at least one image' });
+    }
+
+    const images = req.files.map((file) => {
+      const fileName = path.parse(file.originalname).name;
+      const alt = fileName.replace(/[-_]+/g, ' ').trim();
+      return {
+        url: `/api/uploads/products/${file.filename}`,
+        alt,
+        isPrimary: false,
+      };
+    });
+
+    res.status(201).json({ success: true, images });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Image upload failed. Please try again.' });
+  }
+};
+
 exports.updateProduct = async (req, res) => {
   try {
     const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
@@ -127,7 +151,7 @@ exports.toggleWishlist = async (req, res) => {
   try {
     const user = req.user;
     const productId = req.params.id;
-    const idx = user.wishlist.indexOf(productId);
+    const idx = user.wishlist.findIndex((id) => id.toString() === productId);
     if (idx === -1) {
       user.wishlist.push(productId);
     } else {

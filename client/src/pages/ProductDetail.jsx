@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShoppingCart, Heart, Star, ChevronLeft, ChevronRight, Share2, AlertTriangle } from 'lucide-react';
 import { productApi, reviewApi } from '../utils/api';
@@ -24,20 +24,55 @@ export default function ProductDetail() {
   const [tab, setTab] = useState('description');
   const { addItem } = useCart();
   const { activeVehicle } = useGarage();
-  const { user } = useAuth();
+  const { user, fetchMe } = useAuth();
   const [reviewForm, setReviewForm] = useState({ rating: 5, title: '', body: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [wishlisted, setWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
+  const wishlistIds = useMemo(
+    () => (user?.wishlist || []).map((item) => (typeof item === 'string' ? item : item?._id)).filter(Boolean),
+    [user]
+  );
 
   useEffect(() => {
+    let mounted = true;
     setLoading(true);
-    Promise.all([
-      productApi.getOne(id),
-      reviewApi.getAll({ productId: id }),
-    ]).then(([pRes, rRes]) => {
-      setProduct(pRes.data.product);
-      setReviews(rRes.data.reviews || []);
-    }).finally(() => setLoading(false));
+    setProduct(null);
+    setReviews([]);
+
+    const loadProductAndReviews = async () => {
+      try {
+        const { data: pData } = await productApi.getOne(id);
+        if (!mounted) return;
+        const fetchedProduct = pData.product;
+        setProduct(fetchedProduct);
+
+        try {
+          const { data: rData } = await reviewApi.getAll({ productId: fetchedProduct?._id || id });
+          if (!mounted) return;
+          setReviews(rData.reviews || []);
+        } catch {
+          if (!mounted) return;
+          setReviews([]);
+        }
+      } catch {
+        if (!mounted) return;
+        setProduct(null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    loadProductAndReviews();
+    return () => {
+      mounted = false;
+    };
   }, [id]);
+
+  useEffect(() => {
+    if (!product) return;
+    setWishlisted(wishlistIds.includes(product._id));
+  }, [wishlistIds, product]);
 
   const handleAddToCart = () => {
     setAdding(true);
@@ -51,13 +86,28 @@ export default function ProductDetail() {
     setSubmittingReview(true);
     try {
       await reviewApi.create({ product: product._id, ...reviewForm, vehicle: activeVehicle });
-      const { data } = await reviewApi.getAll({ productId: id });
+      const { data } = await reviewApi.getAll({ productId: product._id });
       setReviews(data.reviews || []);
       setReviewForm({ rating: 5, title: '', body: '' });
     } catch (err) {
       alert(err.response?.data?.message || 'Error submitting review');
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  const handleWishlistToggle = async () => {
+    if (!user || !product || wishlistLoading) return;
+    const previous = wishlisted;
+    setWishlisted(!previous);
+    setWishlistLoading(true);
+    try {
+      await productApi.toggleWishlist(product._id);
+      await fetchMe();
+    } catch {
+      setWishlisted(previous);
+    } finally {
+      setWishlistLoading(false);
     }
   };
 
@@ -200,8 +250,12 @@ export default function ProductDetail() {
                 <ShoppingCart size={18} />
                 {adding ? 'Added!' : product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
               </button>
-              <button className="p-3 dark:bg-dark-surface-2 bg-gray-100 border dark:border-dark-border border-light-border rounded-lg hover:border-brand-red transition-colors">
-                <Heart size={18} className="dark:text-gray-400 text-gray-500" />
+              <button
+                onClick={handleWishlistToggle}
+                disabled={!user || wishlistLoading}
+                className="p-3 dark:bg-dark-surface-2 bg-gray-100 border dark:border-dark-border border-light-border rounded-lg hover:border-brand-red transition-colors disabled:opacity-50"
+              >
+                <Heart size={18} className={wishlisted ? 'text-brand-red fill-brand-red' : 'dark:text-gray-400 text-gray-500'} />
               </button>
             </div>
 
