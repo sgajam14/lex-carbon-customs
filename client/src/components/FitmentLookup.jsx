@@ -17,7 +17,7 @@ export default function FitmentLookup({ onFitmentSelect, compact = false }) {
   const [vinLoading, setVinLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { activeVehicle } = useGarage();
+  const { garage } = useGarage();
 
   useEffect(() => {
     vehicleApi.getYears().then(({ data }) => setYears(data.years || []));
@@ -167,21 +167,27 @@ export default function FitmentLookup({ onFitmentSelect, compact = false }) {
 
       {error && <p className="text-red-400 text-xs mt-2">{error}</p>}
 
-      {activeVehicle && !compact && (
+      {garage.length > 0 && !compact && (
         <div className="mt-4 pt-4 border-t dark:border-dark-border border-light-border">
           <p className="text-xs dark:text-gray-500 text-gray-400 mb-2 font-heading uppercase tracking-wider">My Garage</p>
-          <button
-            onClick={() => {
-              setMake(activeVehicle.make);
-              setModel(activeVehicle.model);
-              setYear(String(activeVehicle.year));
-            }}
-            className="flex items-center gap-2 text-sm dark:text-gray-300 text-gray-600 hover:text-brand-red transition-colors"
-          >
-            <Car size={14} className="text-brand-red" />
-            {activeVehicle.year} {activeVehicle.make} {activeVehicle.model}
-            {activeVehicle.nickname && ` — ${activeVehicle.nickname}`}
-          </button>
+          <div className="space-y-1">
+            {garage.map(v => (
+              <button
+                key={v._id}
+                onClick={() => {
+                  setMake(v.make);
+                  setModel(v.model);
+                  setYear(String(v.year));
+                }}
+                className="flex items-center gap-2 text-sm dark:text-gray-300 text-gray-600 hover:text-brand-red transition-colors w-full text-left"
+              >
+                <Car size={14} className={v.isPrimary ? 'text-brand-red' : 'dark:text-gray-500 text-gray-400'} />
+                {v.year} {v.make} {v.model}
+                {v.nickname && <span className="dark:text-gray-500 text-gray-400">— {v.nickname}</span>}
+                {v.isPrimary && <span className="ml-auto text-[10px] text-brand-red font-heading font-semibold uppercase tracking-wider">Primary</span>}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
