@@ -17,7 +17,7 @@ export default function BuildYourCar() {
   const [activeCategory, setActiveCategory] = useState('');
   const [build, setBuild] = useState({}); // { category: product }
   const [loading, setLoading] = useState(false);
-  const { activeVehicle } = useGarage();
+  const { activeVehicle, garage } = useGarage();
   const { addItem } = useCart();
 
   useEffect(() => {
@@ -59,6 +59,26 @@ export default function BuildYourCar() {
           <h1 className="font-display font-bold text-3xl dark:text-white text-gray-900 mb-1">Build Your Car</h1>
           <p className="dark:text-gray-400 text-gray-500">Select your vehicle, then pick parts verified to fit — minor installation adjustments may apply.</p>
         </div>
+
+        {/* Garage quick-switcher — shown when user has multiple saved vehicles */}
+        {garage.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto no-scrollbar mb-4">
+            {garage.map(v => (
+              <button
+                key={v._id}
+                onClick={() => setVehicle(v)}
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-heading font-semibold transition-colors ${
+                  vehicle?._id === v._id
+                    ? 'bg-brand-red text-white border-brand-red'
+                    : 'dark:border-dark-border border-light-border dark:text-gray-300 text-gray-600 dark:hover:border-gray-500 hover:border-gray-400'
+                }`}
+              >
+                <Car size={11} />
+                {v.year} {v.make} {v.model}{v.nickname ? ` · ${v.nickname}` : ''}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Vehicle selector */}
         <div className="mb-8 max-w-2xl">

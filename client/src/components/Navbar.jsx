@@ -178,7 +178,7 @@ export default function Navbar() {
                     <Link to="/wishlist" className="flex items-center gap-2 px-4 py-2 text-sm dark:text-gray-300 text-gray-600 dark:hover:bg-dark-surface-2 hover:bg-gray-50 transition-colors">
                       <Heart size={14} /> Wishlist
                     </Link>
-                    <Link to="/build" className="flex items-center gap-2 px-4 py-2 text-sm dark:text-gray-300 text-gray-600 dark:hover:bg-dark-surface-2 hover:bg-gray-50 transition-colors">
+                    <Link to="/account?tab=garage" className="flex items-center gap-2 px-4 py-2 text-sm dark:text-gray-300 text-gray-600 dark:hover:bg-dark-surface-2 hover:bg-gray-50 transition-colors">
                       <Car size={14} /> My Garage
                     </Link>
                     {isAffiliate && (

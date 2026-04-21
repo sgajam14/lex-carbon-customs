@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { User, Car, MapPin, Bell, Lock, Settings } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useGarage } from '../context/GarageContext';
@@ -14,7 +15,10 @@ const tabs = [
 export default function Account() {
   const { user, updateUser } = useAuth();
   const { garage, addVehicle, removeVehicle, setPrimary } = useGarage();
-  const [activeTab, setActiveTab] = useState('profile');
+  const [searchParams] = useSearchParams();
+  const validTabs = tabs.map(t => t.id);
+  const initialTab = validTabs.includes(searchParams.get('tab')) ? searchParams.get('tab') : 'profile';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');

@@ -59,19 +59,27 @@ const ELEMENTS_APPEARANCE = {
   },
 };
 
-function CheckoutForm({ order, clientSecret, onSuccess }) {
+function CheckoutForm({ orderData, clientSecret, onSuccess }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
   const [walletsAvailable, setWalletsAvailable] = useState(false);
 
-  const confirmAndFinalizePayment = async () => {
+  const confirmAndFinalizePayment = async (paymentIntent) => {
+    // Only create the order after payment is confirmed
+    const { data: orderRes } = await orderApi.create(orderData);
+    const orderId = orderRes.order._id;
+    await paymentApi.confirm({ paymentIntentId: paymentIntent.id, orderId });
+    onSuccess(orderId);
+  };
+
+  const handleStripeConfirm = async () => {
     const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
       elements,
       clientSecret,
       confirmParams: {
-        return_url: `${window.location.origin}/orders/${order._id}?success=true`,
+        return_url: `${window.location.origin}/orders?success=true`,
       },
       redirect: 'if_required',
     });
@@ -81,13 +89,14 @@ function CheckoutForm({ order, clientSecret, onSuccess }) {
     }
 
     if (paymentIntent?.status === 'succeeded') {
-      await paymentApi.confirm({ paymentIntentId: paymentIntent.id, orderId: order._id });
-      onSuccess(order._id);
+      await confirmAndFinalizePayment(paymentIntent);
       return;
     }
 
     if (paymentIntent?.status === 'processing') {
-      onSuccess(order._id);
+      // Webhook will handle order creation for async payments
+      const { data: orderRes } = await orderApi.create(orderData);
+      onSuccess(orderRes.order._id);
       return;
     }
   };
@@ -105,7 +114,7 @@ function CheckoutForm({ order, clientSecret, onSuccess }) {
         return;
       }
 
-      await confirmAndFinalizePayment();
+      await handleStripeConfirm();
     } catch (err) {
       setError(err.message || err.response?.data?.message || 'Payment failed. Please try again.');
     } finally {
@@ -119,7 +128,7 @@ function CheckoutForm({ order, clientSecret, onSuccess }) {
     setError('');
 
     try {
-      await confirmAndFinalizePayment();
+      await handleStripeConfirm();
     } catch (err) {
       event.paymentFailed();
       setError(err.message || 'Express checkout failed. Please try another payment option.');
@@ -162,7 +171,7 @@ function CheckoutForm({ order, clientSecret, onSuccess }) {
         className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-50"
       >
         <Lock size={16} />
-        {processing ? 'Processing...' : `Pay ${formatPrice(order.total)}`}
+        {processing ? 'Processing...' : `Pay ${formatPrice(orderData.total)}`}
       </button>
     </form>
   );
@@ -173,7 +182,7 @@ export default function Checkout() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // 1: info, 2: payment
-  const [order, setOrder] = useState(null);
+  const [pendingOrderData, setPendingOrderData] = useState(null);
   const [clientSecret, setClientSecret] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -202,7 +211,6 @@ export default function Checkout() {
     setLoading(true);
     setError('');
     try {
-      // Create order
       const affiliateCode = localStorage.getItem('lcc_ref') || undefined;
       const orderData = {
         items: items.map(i => ({ product: i._id, qty: i.qty, fitment: i.fitment })),
@@ -211,16 +219,16 @@ export default function Checkout() {
         guestEmail: !user ? guestEmail : undefined,
         guestName: !user ? `${address.firstName} ${address.lastName}` : undefined,
         affiliateCode,
+        total,
       };
-      const { data: orderRes } = await orderApi.create(orderData);
-      setOrder(orderRes.order);
+      setPendingOrderData(orderData);
 
-      // Create payment intent
-      const { data: piRes } = await paymentApi.createIntent({ orderId: orderRes.order._id, amount: orderRes.order.total });
+      // Create payment intent only — order is created after payment succeeds
+      const { data: piRes } = await paymentApi.createIntent({ amount: total });
       setClientSecret(piRes.clientSecret);
       setStep(2);
     } catch (err) {
-      setError(err.response?.data?.message || 'Error creating order');
+      setError(err.response?.data?.message || 'Error setting up payment');
     } finally {
       setLoading(false);
     }
@@ -231,7 +239,7 @@ export default function Checkout() {
     navigate(`/orders/${orderId}?success=true`);
   };
 
-  if (items.length === 0 && !order) {
+  if (items.length === 0 && !pendingOrderData) {
     navigate('/cart');
     return null;
   }
@@ -339,13 +347,13 @@ export default function Checkout() {
               </form>
             )}
 
-            {step === 2 && order && (
+            {step === 2 && pendingOrderData && (
               <div className="dark:bg-dark-surface bg-white border dark:border-dark-border border-light-border rounded-xl p-5">
                 <h3 className="font-heading font-bold text-base dark:text-white text-gray-900 mb-4 flex items-center gap-2">
                   <Lock size={16} className="text-brand-red" /> Payment
                 </h3>
                 <Elements stripe={stripePromise} options={{ clientSecret, appearance: ELEMENTS_APPEARANCE }}>
-                  <CheckoutForm order={order} clientSecret={clientSecret} onSuccess={handleSuccess} />
+                  <CheckoutForm orderData={pendingOrderData} clientSecret={clientSecret} onSuccess={handleSuccess} />
                 </Elements>
                 <p className="text-xs dark:text-gray-500 text-gray-400 text-center mt-4 flex items-center justify-center gap-1">
                   <Shield size={11} /> Secured by Stripe · Your card info is never stored
