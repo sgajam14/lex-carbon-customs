@@ -57,7 +57,7 @@ export default function BuildYourCar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-8">
           <h1 className="font-display font-bold text-3xl dark:text-white text-gray-900 mb-1">Build Your Car</h1>
-          <p className="dark:text-gray-400 text-gray-500">Select your vehicle, then pick parts that are guaranteed to fit.</p>
+          <p className="dark:text-gray-400 text-gray-500">Select your vehicle, then pick parts verified to fit — minor installation adjustments may apply.</p>
         </div>
 
         {/* Vehicle selector */}

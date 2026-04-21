@@ -18,16 +18,23 @@ const sendTokenResponse = (user, statusCode, res) => {
       garage: user.garage,
       wishlist: user.wishlist,
       avatar: user.avatar,
+      isAffiliate: user.isAffiliate,
+      affiliateCode: user.affiliateCode,
     },
   });
 };
 
 exports.register = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, phone } = req.body;
+    const { firstName, lastName, email, password, phone, referredBy } = req.body;
     const exists = await User.findOne({ email });
     if (exists) return res.status(400).json({ success: false, message: 'Email already registered' });
-    const user = await User.create({ firstName, lastName, email, password, phone });
+    const userData = { firstName, lastName, email, password, phone };
+    if (referredBy) {
+      const affiliate = await User.findOne({ affiliateCode: referredBy, isAffiliate: true });
+      if (affiliate) userData.referredBy = referredBy;
+    }
+    const user = await User.create(userData);
     sendTokenResponse(user, 201, res);
   } catch (err) {
     console.error(err);

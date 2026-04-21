@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, Moon, Sun, Menu, X, ChevronDown, Car, Shield, Search, Package, Heart } from 'lucide-react';
+import { ShoppingCart, User, Moon, Sun, Menu, X, ChevronDown, Car, Shield, Search, Package, Heart, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
@@ -13,7 +13,7 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userDropdown, setUserDropdown] = useState(false);
   const [topBarMessageIndex, setTopBarMessageIndex] = useState(0);
-  const { user, logout, isAdmin } = useAuth();
+  const { user, logout, isAdmin, isAffiliate } = useAuth();
   const { count } = useCart();
   const { isDark, toggle } = useTheme();
   const { activeVehicle } = useGarage();
@@ -21,7 +21,7 @@ export default function Navbar() {
   const navigate = useNavigate();
 
   const topBarMessages = [
-    'FREE SHIPPING ON ORDERS OVER $500 | GUARANTEED FIT OR MONEY BACK',
+    'FREE SHIPPING ON ORDERS OVER $500 | PRECISION FITMENT — MINOR ADJUSTMENTS MAY BE NEEDED',
     'Need Help? Contact us: (667) 786-9362',
   ];
 
@@ -181,6 +181,14 @@ export default function Navbar() {
                     <Link to="/build" className="flex items-center gap-2 px-4 py-2 text-sm dark:text-gray-300 text-gray-600 dark:hover:bg-dark-surface-2 hover:bg-gray-50 transition-colors">
                       <Car size={14} /> My Garage
                     </Link>
+                    {isAffiliate && (
+                      <>
+                        <div className="border-t dark:border-dark-border border-light-border my-1" />
+                        <Link to="/affiliate" className="flex items-center gap-2 px-4 py-2 text-sm text-green-400 dark:hover:bg-dark-surface-2 hover:bg-gray-50 transition-colors font-semibold">
+                          <TrendingUp size={14} /> Affiliate Dashboard
+                        </Link>
+                      </>
+                    )}
                     {isAdmin && (
                       <>
                         <div className="border-t dark:border-dark-border border-light-border my-1" />

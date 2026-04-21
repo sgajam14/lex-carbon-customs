@@ -71,6 +71,8 @@ const orderSchema = new mongoose.Schema({
   isBackordered: { type: Boolean, default: false },
   backorderETA: { type: Date },
   financingProvider: { type: String }, // Affirm, Klarna
+  affiliateCode: { type: String },
+  affiliateCommission: { type: Number, default: 0 },
 }, { timestamps: true });
 
 // Auto-generate order number

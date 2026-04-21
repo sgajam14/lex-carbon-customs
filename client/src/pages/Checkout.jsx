@@ -203,12 +203,14 @@ export default function Checkout() {
     setError('');
     try {
       // Create order
+      const affiliateCode = localStorage.getItem('lcc_ref') || undefined;
       const orderData = {
         items: items.map(i => ({ product: i._id, qty: i.qty, fitment: i.fitment })),
         shippingAddress: address,
         shippingMethod,
         guestEmail: !user ? guestEmail : undefined,
         guestName: !user ? `${address.firstName} ${address.lastName}` : undefined,
+        affiliateCode,
       };
       const { data: orderRes } = await orderApi.create(orderData);
       setOrder(orderRes.order);

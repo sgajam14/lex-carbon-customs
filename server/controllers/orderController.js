@@ -1,12 +1,13 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const { sendOrderConfirmation, sendShippingNotification } = require('../utils/email');
 
 const CANCELLABLE_STATUSES = ['Pending', 'Confirmed'];
 
 exports.createOrder = async (req, res) => {
   try {
-    const { items, shippingAddress, billingAddress, shippingMethod, notes, guestEmail, guestName, financingProvider } = req.body;
+    const { items, shippingAddress, billingAddress, shippingMethod, notes, guestEmail, guestName, financingProvider, affiliateCode } = req.body;
 
     // Validate stock and get current prices
     let subtotal = 0;
@@ -53,6 +54,18 @@ exports.createOrder = async (req, res) => {
     // Update stock
     for (const item of items) {
       await Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.qty } });
+    }
+
+    // Credit affiliate if a valid code was provided
+    if (affiliateCode) {
+      const affiliate = await User.findOne({ affiliateCode, isAffiliate: true });
+      if (affiliate) {
+        const commission = Math.round(order.total * affiliate.affiliateCommissionRate) / 100;
+        await Order.findByIdAndUpdate(order._id, { affiliateCode, affiliateCommission: commission });
+        await User.findByIdAndUpdate(affiliate._id, {
+          $inc: { affiliateSales: 1, affiliateEarnings: commission },
+        });
+      }
     }
 
     res.status(201).json({ success: true, order });

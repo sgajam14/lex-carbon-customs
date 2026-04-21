@@ -49,6 +49,9 @@ export const productApi = {
   getOne: (id) => api.get(`/products/${id}`),
   getFeatured: () => api.get('/products/featured'),
   getMeta: () => api.get('/products/meta'),
+  getBestSellers: (limit = 8) => api.get('/products/bestsellers', { params: { limit } }),
+  getLiveViews: () => api.get('/products/live-views'),
+  trackView: (id) => api.post(`/products/${id}/view`),
   uploadImages: (formData) => api.post('/products/upload-images', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   }),
@@ -116,4 +119,21 @@ export const adminApi = {
   getAllUsers: (params) => api.get('/admin/users', { params }),
   updateUserRole: (id, role) => api.put(`/admin/users/${id}/role`, { role }),
   updateInventory: (id, data) => api.put(`/admin/inventory/${id}`, data),
+  getAffiliates: () => api.get('/admin/affiliates'),
+  createAffiliateInvite: (email, commissionRate) => api.post('/admin/affiliates/invite', { email, commissionRate }),
+  updateAffiliateRate: (id, commissionRate) => api.put(`/admin/affiliates/${id}/rate`, { commissionRate }),
+};
+
+// Affiliate
+export const affiliateApi = {
+  getMe: () => api.get('/affiliate/me'),
+  activate: (token) => api.post('/affiliate/activate', { token }),
+  trackClick: (code) => api.post(`/affiliate/click/${code}`),
+};
+
+// Product extras
+export const productExtrasApi = {
+  getBestSellers: (limit = 8) => api.get('/products/bestsellers', { params: { limit } }),
+  getLiveViews: () => api.get('/products/live-views'),
+  trackView: (id) => api.post(`/products/${id}/view`),
 };

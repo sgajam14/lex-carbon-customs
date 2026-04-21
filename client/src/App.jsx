@@ -4,6 +4,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
+import AffiliateRoute from './components/AffiliateRoute';
 
 // Lazy load pages
 const Home = lazy(() => import('./pages/Home'));
@@ -20,10 +21,13 @@ const OrderDetail = lazy(() => import('./pages/OrderDetail'));
 const OrderTracking = lazy(() => import('./pages/OrderTracking'));
 const BuildYourCar = lazy(() => import('./pages/BuildYourCar'));
 const Gallery = lazy(() => import('./pages/Gallery'));
+const AffiliateDashboard = lazy(() => import('./pages/AffiliateDashboard'));
+const AffiliateJoin = lazy(() => import('./pages/AffiliateJoin'));
 const AdminDashboard = lazy(() => import('./pages/admin/Dashboard'));
 const AdminProducts = lazy(() => import('./pages/admin/Products'));
 const AdminOrders = lazy(() => import('./pages/admin/Orders'));
 const AdminProductForm = lazy(() => import('./pages/admin/ProductForm'));
+const AdminAffiliates = lazy(() => import('./pages/admin/Affiliates'));
 
 const Loader = () => (
   <div className="min-h-screen flex items-center justify-center bg-dark-bg">
@@ -56,12 +60,16 @@ export default function App() {
             <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
             <Route path="/orders/:id" element={<ProtectedRoute><OrderDetail /></ProtectedRoute>} />
+            {/* Affiliate routes */}
+            <Route path="/affiliate" element={<AffiliateRoute><AffiliateDashboard /></AffiliateRoute>} />
+            <Route path="/affiliate/join" element={<AffiliateJoin />} />
             {/* Admin routes */}
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
             <Route path="/admin/products/new" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
             <Route path="/admin/products/:id/edit" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
             <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+            <Route path="/admin/affiliates" element={<AdminRoute><AdminAffiliates /></AdminRoute>} />
             {/* 404 */}
             <Route path="*" element={
               <div className="min-h-screen flex items-center justify-center">

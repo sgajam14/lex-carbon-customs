@@ -18,7 +18,7 @@ export default function Footer() {
             </p>
             <div className="flex items-center gap-1 text-sm font-medium text-green-400 mb-6">
               <span className="w-2 h-2 bg-green-400 rounded-full inline-block" />
-              Guaranteed Fit or Your Money Back
+              Precision Fitment — Some installation adjustments may apply
             </div>
             <div className="flex items-center gap-3">
               <a href="#" className="text-gray-400 hover:text-brand-red transition-colors"><Instagram size={18} /></a>

@@ -5,7 +5,7 @@ export default function FitmentBadge({ fitmentData, vehicle }) {
     return (
       <div className="flex items-center gap-2 bg-green-900/20 border border-green-500/25 text-green-400 px-4 py-2.5 rounded-lg text-sm">
         <CheckCircle size={16} />
-        <span className="font-medium">Guaranteed Fit or Your Money Back</span>
+        <span className="font-medium">Precision-Matched Fitment — Minor adjustments may be needed during install</span>
       </div>
     );
   }

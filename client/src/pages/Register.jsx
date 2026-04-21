@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { affiliateApi } from '../utils/api';
 
 export default function Register() {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const prefillEmail = location.state?.prefillEmail || '';
   const [form, setForm] = useState({
     firstName: '',
@@ -20,6 +22,12 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+  // Persist referral code from ?ref=CODE to localStorage
+  useEffect(() => {
+    const ref = searchParams.get('ref');
+    if (ref) localStorage.setItem('lcc_ref', ref);
+  }, [searchParams]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (form.password !== form.confirmPassword) { setError('Passwords do not match'); return; }
@@ -27,7 +35,17 @@ export default function Register() {
     setLoading(true);
     setError('');
     try {
-      await register(form);
+      const ref = localStorage.getItem('lcc_ref');
+      await register({ ...form, referredBy: ref || undefined });
+
+      // If arriving via affiliate invite link, activate affiliate status
+      const affiliateToken = searchParams.get('affiliateToken');
+      if (affiliateToken) {
+        await affiliateApi.activate(affiliateToken).catch(() => {});
+        navigate('/affiliate');
+        return;
+      }
+
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');

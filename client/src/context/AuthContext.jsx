@@ -55,9 +55,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAdmin = user?.role === 'admin' || user?.role === 'superadmin';
+  const isAffiliate = !!user?.isAffiliate;
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, isAdmin, fetchMe }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, isAdmin, isAffiliate, fetchMe }}>
       {children}
     </AuthContext.Provider>
   );

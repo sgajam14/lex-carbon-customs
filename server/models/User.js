@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-  password: { type: String, required: true, minlength: 6 },
+  password: { type: String, required: true, minlength: 6, select: false },
   phone: { type: String },
   role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
   garage: [vehicleSchema],
@@ -40,10 +40,16 @@ const userSchema = new mongoose.Schema({
   emailVerified: { type: Boolean, default: false },
   emailNotifications: { type: Boolean, default: true },
   smsNotifications: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now },
+  // Affiliate fields
+  isAffiliate: { type: Boolean, default: false },
+  affiliateCode: { type: String, unique: true, sparse: true },
+  affiliateCommissionRate: { type: Number, default: 10 },
+  affiliateClicks: { type: Number, default: 0 },
+  affiliateSales: { type: Number, default: 0 },
+  affiliateEarnings: { type: Number, default: 0 },
+  referredBy: { type: String }, // affiliate code used during signup
 }, { timestamps: true });
 
-// Hash password before save
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);

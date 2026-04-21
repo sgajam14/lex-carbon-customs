@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { TrendingUp, Package, Users, ShoppingBag, AlertTriangle, ArrowRight, BarChart2 } from 'lucide-react';
+import { TrendingUp, Package, Users, ShoppingBag, AlertTriangle, ArrowRight, BarChart2, Medal } from 'lucide-react';
 import { adminApi } from '../../utils/api';
 import { formatPrice, formatDate, getStatusColor } from '../../utils/formatters';
 
@@ -24,12 +24,21 @@ function StatCard({ label, value, subValue, icon: Icon, color, trend }) {
   );
 }
 
+const MEDAL_COLORS = ['text-yellow-400', 'text-gray-300', 'text-amber-600'];
+
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
+  const [affiliates, setAffiliates] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    adminApi.getDashboard().then(({ data }) => setData(data)).finally(() => setLoading(false));
+    Promise.all([
+      adminApi.getDashboard(),
+      adminApi.getAffiliates(),
+    ]).then(([dashRes, affRes]) => {
+      setData(dashRes.data);
+      setAffiliates(affRes.data.affiliates?.slice(0, 5) || []);
+    }).finally(() => setLoading(false));
   }, []);
 
   if (loading) return (
@@ -86,7 +95,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6 mb-6">
           {/* Recent orders */}
           <div className="dark:bg-dark-surface bg-white border dark:border-dark-border border-light-border rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
@@ -117,7 +126,7 @@ export default function AdminDashboard() {
                 { label: 'Add Product', href: '/admin/products/new', icon: Package },
                 { label: 'View Orders', href: '/admin/orders', icon: ShoppingBag },
                 { label: 'All Products', href: '/admin/products', icon: Package },
-                { label: 'Manage Users', href: '/admin', icon: Users },
+                { label: 'Affiliates', href: '/admin/affiliates', icon: Users },
               ].map(action => (
                 <Link
                   key={action.label}
@@ -131,6 +140,35 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {/* Affiliate leaderboard */}
+        {affiliates.length > 0 && (
+          <div className="dark:bg-dark-surface bg-white border dark:border-dark-border border-light-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-heading font-bold dark:text-white text-gray-900 uppercase tracking-wider text-sm flex items-center gap-2">
+                <Medal size={15} className="text-yellow-400" /> Top Affiliates
+              </h3>
+              <Link to="/admin/affiliates" className="text-xs text-brand-red hover:underline">Manage All</Link>
+            </div>
+            <div className="space-y-3">
+              {affiliates.map((aff, i) => (
+                <div key={aff._id} className="flex items-center gap-3 py-2 border-b dark:border-dark-border border-light-border last:border-0">
+                  <span className={`font-display font-black text-lg w-6 text-center ${MEDAL_COLORS[i] || 'text-gray-500'}`}>
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium dark:text-white text-gray-900 truncate">{aff.firstName} {aff.lastName}</p>
+                    <p className="text-xs dark:text-gray-500 text-gray-400 font-mono">{aff.affiliateCode}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-green-400">{formatPrice(aff.affiliateEarnings)}</p>
+                    <p className="text-xs dark:text-gray-500 text-gray-400">{aff.affiliateSales} sales</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

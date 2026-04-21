@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const Review = require('../models/Review');
+const jwt = require('jsonwebtoken');
 
 exports.getDashboard = async (req, res) => {
   try {
@@ -123,6 +124,58 @@ exports.updateInventory = async (req, res) => {
       { new: true }
     );
     res.json({ success: true, product });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
+  }
+};
+
+exports.getAffiliates = async (req, res) => {
+  try {
+    const affiliates = await User.find({ isAffiliate: true })
+      .select('firstName lastName email affiliateCode affiliateCommissionRate affiliateClicks affiliateSales affiliateEarnings createdAt')
+      .sort('-affiliateEarnings');
+    res.json({ success: true, affiliates });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
+  }
+};
+
+exports.createAffiliateInvite = async (req, res) => {
+  try {
+    const { email, commissionRate = 10 } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+    const token = jwt.sign(
+      { email: email.toLowerCase(), type: 'affiliate-invite', commissionRate },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const inviteLink = `${clientUrl}/affiliate/join?token=${token}`;
+
+    res.json({ success: true, inviteLink, email, commissionRate });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
+  }
+};
+
+exports.updateAffiliateRate = async (req, res) => {
+  try {
+    const { commissionRate } = req.body;
+    if (commissionRate < 0 || commissionRate > 100) {
+      return res.status(400).json({ success: false, message: 'Commission rate must be 0–100' });
+    }
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { affiliateCommissionRate: commissionRate },
+      { new: true }
+    ).select('firstName lastName email affiliateCode affiliateCommissionRate');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    res.json({ success: true, user });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });

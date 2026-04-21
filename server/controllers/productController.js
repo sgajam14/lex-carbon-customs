@@ -1,5 +1,7 @@
 const Product = require('../models/Product');
+const Order = require('../models/Order');
 const path = require('path');
+const { recordView, getLiveViewCounts } = require('../utils/viewTracker');
 
 exports.getProducts = async (req, res) => {
   try {
@@ -159,6 +161,57 @@ exports.toggleWishlist = async (req, res) => {
     }
     await user.save();
     res.json({ success: true, wishlist: user.wishlist });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
+  }
+};
+
+exports.getBestSellers = async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 8, 20);
+    const results = await Order.aggregate([
+      { $match: { paymentStatus: 'Paid' } },
+      { $unwind: '$items' },
+      { $group: { _id: '$items.product', totalSold: { $sum: '$items.qty' } } },
+      { $sort: { totalSold: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'products',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'product',
+        },
+      },
+      { $unwind: '$product' },
+      { $match: { 'product.isArchived': false } },
+      { $replaceRoot: { newRoot: { $mergeObjects: ['$product', { totalSold: '$totalSold' }] } } },
+    ]);
+    res.json({ success: true, products: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
+  }
+};
+
+exports.trackView = (req, res) => {
+  const { id } = req.params;
+  if (id) recordView(id);
+  res.json({ success: true });
+};
+
+exports.getLiveViews = async (req, res) => {
+  try {
+    const counts = getLiveViewCounts().slice(0, 8);
+    if (!counts.length) return res.json({ success: true, products: [] });
+    const ids = counts.map(c => c.productId);
+    const products = await Product.find({ _id: { $in: ids }, isArchived: false });
+    const withCounts = products.map(p => {
+      const entry = counts.find(c => c.productId === p._id.toString());
+      return { ...p.toObject(), viewersNow: entry?.count || 1 };
+    }).sort((a, b) => b.viewersNow - a.viewersNow);
+    res.json({ success: true, products: withCounts });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });

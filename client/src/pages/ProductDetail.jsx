@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ShoppingCart, Heart, Star, ChevronLeft, ChevronRight, Share2, AlertTriangle } from 'lucide-react';
-import { productApi, reviewApi } from '../utils/api';
+import { productApi, reviewApi, productExtrasApi } from '../utils/api';
 import { formatPrice, getDiscount, formatDate } from '../utils/formatters';
 import { useCart } from '../context/CartContext';
 import { useGarage } from '../context/GarageContext';
@@ -64,6 +64,8 @@ export default function ProductDetail() {
     };
 
     loadProductAndReviews();
+    // Fire-and-forget view tracking for live viewer counts
+    productExtrasApi.trackView(id).catch(() => {});
     return () => {
       mounted = false;
     };
@@ -322,7 +324,7 @@ export default function ProductDetail() {
                         {f.requiresModification ? (
                           <span className="flex items-center gap-1 text-xs text-orange-400 font-medium"><AlertTriangle size={12} /> Mod Required</span>
                         ) : (
-                          <span className="text-xs text-green-400 font-medium">Direct Fit</span>
+                          <span className="text-xs text-green-400 font-medium">Verified Fitment</span>
                         )}
                         <p className="text-xs dark:text-gray-500 text-gray-400 mt-1">{f.fitmentConfidence}% confidence</p>
                       </div>

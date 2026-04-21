@@ -7,6 +7,7 @@ const { admin } = require('../middleware/admin');
 const {
   getProducts, getProduct, createProduct, updateProduct,
   deleteProduct, getFeatured, getCategories, toggleWishlist, uploadProductImages,
+  getBestSellers, trackView, getLiveViews,
 } = require('../controllers/productController');
 
 const productUploadDir = path.join(__dirname, '..', 'uploads', 'products');
@@ -46,6 +47,9 @@ const uploadProductImagesMiddleware = (req, res, next) => {
 router.get('/', getProducts);
 router.get('/featured', getFeatured);
 router.get('/meta', getCategories);
+router.get('/bestsellers', getBestSellers);
+router.get('/live-views', getLiveViews);
+router.post('/:id/view', trackView);
 router.get('/:id', getProduct);
 router.post('/upload-images', protect, admin, uploadProductImagesMiddleware, uploadProductImages);
 router.post('/', protect, admin, createProduct);

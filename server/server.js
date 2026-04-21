@@ -15,10 +15,12 @@ app.use(helmet());
 app.use(morgan('dev'));
 app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Rate limiting
+// Rate limiting — generous in dev, tighter in production
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'production' ? 300 : 2000,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api/', limiter);
 
@@ -47,7 +49,12 @@ app.use(cors({
         : allowedOrigin === normalizedOrigin
     ));
 
-    return callback(allowed ? null : new Error('Not allowed by CORS'), allowed);
+    if (!allowed) {
+      const corsErr = new Error('Not allowed by CORS');
+      corsErr.status = 403;
+      return callback(corsErr, false);
+    }
+    return callback(null, true);
   },
   credentials: true,
 }));
@@ -67,6 +74,7 @@ app.use('/api/reviews', require('./routes/reviews'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/vehicles', require('./routes/vehicles'));
 app.use('/api/bundles', require('./routes/bundles'));
+app.use('/api/affiliate', require('./routes/affiliate'));
 
 // Health check
 app.get('/api/health', (req, res) => {
