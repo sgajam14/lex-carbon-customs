@@ -74,7 +74,7 @@ export default function Home() {
               <span className="text-gradient">DOMINATE</span>
             </h1>
             <p className="text-gray-300 text-lg leading-relaxed mb-8 max-w-md">
-              Hand-laid carbon fiber parts engineered for your exact vehicle. Precision-matched fitment — minor adjustments may be needed during installation.
+              Hand-laid carbon fiber parts engineered for your exact vehicle. Precision-matched fitment designed for a perfect finish.
             </p>
             <div className="flex flex-wrap items-center gap-3 mb-10">
               <div className="flex items-center gap-1.5 text-green-400 text-sm font-medium">

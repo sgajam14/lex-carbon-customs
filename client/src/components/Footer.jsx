@@ -18,7 +18,7 @@ export default function Footer() {
             </p>
             <div className="flex items-center gap-1 text-sm font-medium text-green-400 mb-6">
               
-              Precision Fitment — PLACEHOLDER
+              Precision Fitment for Your Vehicle
             </div>
             <div className="flex items-center gap-3">
               <a href="#" className="text-gray-400 hover:text-brand-red transition-colors"><Instagram size={18} /></a>
